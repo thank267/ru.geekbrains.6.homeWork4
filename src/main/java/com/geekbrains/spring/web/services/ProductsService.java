@@ -18,7 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 
@@ -26,6 +29,15 @@ import java.util.Optional;
 public class ProductsService {
     private final ProductsRepository productsRepository;
     private final CategoriesRepository categoriesRepository;
+
+    public static final Function<Product, com.geekbrains.spring.web.soap.products.Product> functionEntityToSoap = p -> {
+        com.geekbrains.spring.web.soap.products.Product ps = new com.geekbrains.spring.web.soap.products.Product();
+        ps.setId(p.getId());
+        ps.setTitle(p.getTitle());
+        ps.setPrice(p.getPrice());
+        return ps;
+    };
+
 
     public Page<Product> findAll(Integer minPrice, Integer maxPrice, String partTitle, Long categoryId, Integer page) {
         Specification<Product> spec = Specification.where(null);
@@ -46,8 +58,16 @@ public class ProductsService {
         return productsRepository.findAll(spec, PageRequest.of(page - 1, 8));
     }
 
+    public List<com.geekbrains.spring.web.soap.products.Product> findAll() {
+        return productsRepository.findAll().stream().map(functionEntityToSoap).collect(Collectors.toList());
+    }
+
     public Optional<Product> findById(Long id) {
         return productsRepository.findById(id);
+    }
+
+    public Optional<com.geekbrains.spring.web.soap.products.Product> findByIdSoap(Long id) {
+        return productsRepository.findById(id).stream().map(functionEntityToSoap).findFirst();
     }
 
     public void deleteById(Long id) {
